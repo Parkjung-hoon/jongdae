@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name viewport="width=device-width, initial-scale=1.0">
+    <title>검 강화 게임</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .sword-display {
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .sword {
+            font-size: 8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
+        }
+        
+        .sword:hover {
+            transform: scale(1.1) rotate(5deg);
+            filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.8));
+        }
+        
+        .sword.upgrading {
+            animation: upgrade 0.5s ease-in-out;
+        }
+        
+        @keyframes upgrade {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3) rotate(10deg); filter: drop-shadow(0 0 40px gold); }
+            100% { transform: scale(1); }
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .stat-box {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .upgrade-section {
+            margin-top: 30px;
+        }
+        
+        .upgrade-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(238, 90, 36, 0.4);
+            margin: 10px;
+        }
+        
+        .upgrade-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(238, 90, 36, 0.6);
+        }
+        
+        .upgrade-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        .success-message {
+            background: rgba(46, 204, 113, 0.2);
+            border: 2px solid #2ecc71;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .success-message.show {
+            opacity: 1;
+        }
+        
+        .fail-message {
+            background: rgba(231, 76, 60, 0.2);
+            border: 2px solid #e74c3c;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .fail-message.show {
+            opacity: 1;
+        }
+        
+        .gold-display {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            padding: 15px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .probability {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+        
+        .sword-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">⚔️ 검 강화 게임</h1>
+        
+        <div class="sword-display">
+            <div class="sword" id="sword" onclick="clickSword()">⚔️</div>
+        </div>
+        
+
+        
+        <div class="sword-name" id="swordName">
+            낡은 검
+        </div>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">강화 레벨</div>
+                <div class="stat-value" id="level">+0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">공격력</div>
+                <div class="stat-value" id="attack">100</div>
+            </div>
+        </div>
+        
+        <div class="upgrade-section">
+            <button class="upgrade-btn" id="upgradeBtn" onclick="upgradeSword()">
+                강화하기
+            </button>
+            <div class="probability">
+                성공 확률: <span id="successRate">95%</span>
+            </div>
+        </div>
+        
+        <div class="success-message" id="successMessage">
+            ✨ 강화 성공! 검이 더욱 강력해졌습니다!
+        </div>
+        
+        <div class="fail-message" id="failMessage">
+            💥 강화 실패! 검이 파괴되었습니다...
+        </div>
+        
+        <div class="success-message" id="clearMessage" style="background: rgba(255, 215, 0, 0.3); border-color: #ffd700; font-size: 1.5rem;">
+            🎉 게임 클리어! 축하합니다! 🎉
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            level: 0,
+            attack: 100,
+            baseAttack: 100
+        };
+        
+        function getSwordName() {
+            const swordNames = [
+                "🗡️ 낡은 검",           // +0
+                "🔸 날카로운 검",        // +1
+                "⭐ 강화된 검",          // +2
+                "💫 빛나는 검",          // +3
+                "🌟 반짝이는 검",        // +4
+                "✨ 마법 검",            // +5
+                "🔮 신비한 검",          // +6
+                "🌙 달빛 검",            // +7
+                "🌊 파도 검",            // +8
+                "🔥 화염 검",            // +9
+                "⚡ 번개 검",            // +10
+                "❄️ 얼음 검",            // +11
+                "🌪️ 바람 검",           // +12
+                "🌍 대지 검",            // +13
+                "☀️ 태양 검",            // +14
+                "💎 다이아몬드 검",      // +15
+                "👑 왕의 검",            // +16
+                "🦅 독수리 검",          // +17
+                "🐉 용의 검",            // +18
+                "🔱 삼지창 검",          // +19
+                "🌟 신화의 검"           // +20
+            ];
+            
+            return swordNames[gameState.level] || "🌟 신화의 검";
+        }
+        
+        function updateDisplay() {
+            document.getElementById('level').textContent = `+${gameState.level}`;
+            document.getElementById('attack').textContent = gameState.attack;
+            document.getElementById('swordName').textContent = getSwordName();
+            
+            const successRate = getSuccessRate();
+            document.getElementById('successRate').textContent = `${successRate}%`;
+            
+            // 검 모양과 색상 변경
+            const sword = document.getElementById('sword');
+            const swordNameElement = document.getElementById('swordName');
+            
+            const swordShapes = [
+                '🗡️', // +0 기본 검
+                '⚔️', // +1 십자 검
+                '🔪', // +2 단검
+                '🗡️', // +3 긴 검
+                '⚔️', // +4 십자 검
+                '🔮', // +5 마법 구슬
+                '🪄', // +6 마법 지팡이
+                '🌙', // +7 초승달
+                '🔱', // +8 삼지창
+                '🔥', // +9 화염
+                '⚡', // +10 번개
+                '❄️', // +11 얼음 결정
+                '🌪️', // +12 토네이도
+                '🌍', // +13 지구
+                '☀️', // +14 태양
+                '💎', // +15 다이아몬드
+                '👑', // +16 왕관
+                '🦅', // +17 독수리
+                '🐉', // +18 용
+                '🔱', // +19 삼지창
+                '⭐'  // +20 별
+            ];
+            
+            const swordColors = [
+                '#cccccc', // +0 회색
+                '#ffffff', // +1 흰색
+                '#87ceeb', // +2 하늘색
+                '#dda0dd', // +3 자주색
+                '#ffd700', // +4 금색
+                '#3498db', // +5 파란색
+                '#9b59b6', // +6 보라색
+                '#f39c12', // +7 주황색
+                '#1abc9c', // +8 청록색
+                '#e74c3c', // +9 빨간색
+                '#f1c40f', // +10 노란색
+                '#3498db', // +11 파란색
+                '#2ecc71', // +12 초록색
+                '#8b4513', // +13 갈색
+                '#ff6347', // +14 토마토색
+                '#ff1493', // +15 핑크색
+                '#9932cc', // +16 보라색
+                '#ff4500', // +17 주황빨강
+                '#dc143c', // +18 진홍색
+                '#4b0082', // +19 남색
+                '#ffd700'  // +20 금색
+            ];
+            
+            const shape = swordShapes[gameState.level] || '⭐';
+            const color = swordColors[gameState.level] || '#ffd700';
+            sword.textContent = shape;
+            sword.style.color = color;
+            swordNameElement.style.color = color;
+            swordNameElement.style.borderColor = `${color}80`;
+        }
+        
+
+        
+        function getSuccessRate() {
+            if (gameState.level >= 20) return 1; // 마지막 레벨은 1%
+            return Math.max(1, 100 - (gameState.level * 5)); // 레벨당 5%씩 감소
+        }
+        
+        function clickSword() {
+            // 클릭 효과
+            const sword = document.getElementById('sword');
+            sword.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                sword.style.transform = 'scale(1)';
+            }, 150);
+        }
+        
+        function upgradeSword() {
+            const successRate = getSuccessRate();
+            
+            const sword = document.getElementById('sword');
+            sword.classList.add('upgrading');
+            
+            setTimeout(() => {
+                const random = Math.random() * 100;
+                
+                if (random <= successRate) {
+                    // 성공
+                    gameState.level++;
+                    gameState.attack = Math.floor(gameState.baseAttack * Math.pow(1.2, gameState.level));
+                    
+                    if (gameState.level >= 21) {
+                        // 게임 클리어
+                        showMessage('clear');
+                        document.getElementById('upgradeBtn').disabled = true;
+                        document.getElementById('upgradeBtn').textContent = '게임 완료!';
+                    } else {
+                        showMessage('success');
+                    }
+                } else {
+                    // 실패 - 검 파괴
+                    if (gameState.level > 0) {
+                        gameState.level = Math.max(0, gameState.level - 1);
+                        gameState.attack = Math.floor(gameState.baseAttack * Math.pow(1.2, gameState.level));
+                    }
+                    showMessage('fail');
+                }
+                
+                sword.classList.remove('upgrading');
+                updateDisplay();
+            }, 500);
+        }
+        
+        function showMessage(type) {
+            const successMsg = document.getElementById('successMessage');
+            const failMsg = document.getElementById('failMessage');
+            const clearMsg = document.getElementById('clearMessage');
+            
+            if (type === 'success') {
+                successMsg.classList.add('show');
+                setTimeout(() => successMsg.classList.remove('show'), 3000);
+            } else if (type === 'fail') {
+                failMsg.classList.add('show');
+                setTimeout(() => failMsg.classList.remove('show'), 3000);
+            } else if (type === 'clear') {
+                clearMsg.classList.add('show');
+                // 클리어 메시지는 사라지지 않음
+            }
+        }
+        
+        // 초기 화면 업데이트
+        updateDisplay();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96acf663b5e9ea07',t:'MTc1NDQ2NjgyNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
